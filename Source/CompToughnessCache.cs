@@ -1,5 +1,6 @@
 using RimWorld;
 using RimWorld.Planet;
+using System;
 using System.Linq;
 using Verse;
 
@@ -15,6 +16,7 @@ public class CompToughnessCache : ThingComp
 
     public bool skillDisabled = false;
     public bool compintitialised = false;
+	public bool toughTraitAdjusted = false;
 
     private static ThoughnessSkillSettings Settings =>
         LoadedModManager.GetMod<ToughnessSkillMod>()?.GetSettings<ThoughnessSkillSettings>() ?? ToughnessSkillMod.settings;
@@ -22,11 +24,11 @@ public class CompToughnessCache : ThingComp
 	public void UpdateCache(Pawn pawn, bool skillDisablesChanged)
 	{
 		SkillRecord skillRecord = pawn.skills?.GetSkill(DefDatabase<SkillDef>.GetNamed("Toughness", errorOnFail: false));
-
+        skillRecord.levelInt = AdjustToughnessByTrait(pawn, skillRecord.levelInt);
+        
         if (skillDisablesChanged)
         {
 			skillRecord.Notify_SkillDisablesChanged();
-            Log.Message($"[Toughness] Skill disable state changed for {pawn.NameShortColored}. Totally disabled: {skillRecord?.TotallyDisabled}. Updating cache. Previous skillDisabled: {skillDisabled}");
             if (skillRecord.TotallyDisabled)
 			{
 				skillDisabled = true;
@@ -39,7 +41,7 @@ public class CompToughnessCache : ThingComp
 			}
 		}
 
-        if (skillRecord != null && skillRecord.Level != lastLevel)
+        if (skillRecord != null && skillRecord.levelInt != lastLevel)
 		{
             CalculateCachedFactors(pawn, skillRecord);
 		} 
@@ -169,7 +171,7 @@ public class CompToughnessCache : ThingComp
 
 	private void CalculateCachedFactors(Pawn pawn, SkillRecord skillRecord)
 	{
-        lastLevel = skillRecord.Level;
+        lastLevel = skillRecord.levelInt;
         if (skillRecord.TotallyDisabled)
 		{
 			cachedBleedFactor = 1f;
@@ -200,7 +202,6 @@ public class CompToughnessCache : ThingComp
         if (!comp.compintitialised)
         {
             comp.compintitialised = true;
-            skill.Notify_SkillDisablesChanged();
 
             if (skill.TotallyDisabled)
             {
@@ -211,9 +212,38 @@ public class CompToughnessCache : ThingComp
 
 			if (Prefs.DevMode && (bool)Settings.debugMode)
 			{
-				Log.Message($"[Toughness] Initialised toughness cache for {pawn.NameShortColored}. Skill disabled: {comp.skillDisabled}. Cached damage factor: {comp.cachedDamageFactor:0.##}. Cached bleed factor: {comp.cachedBleedFactor:0.##}");
+				Log.Message($"[Toughness] Initialised toughness cache for {pawn.NameShortColored}. Skill disabled: {comp.skillDisabled}. Cached damage factor: {comp.cachedDamageFactor:0.##}. Cached bleed factor: {comp.cachedBleedFactor:0.##}, Level: {skill.levelInt}");
             }
         }
+    }
+
+    public int AdjustToughnessByTrait(Pawn pawn, int baseToughness)
+    {
+        if (pawn.story != null && pawn.story.traits != null)
+        {
+            TraitDef thoughTrait = TraitDef.Named("Tough");
+            if (thoughTrait != null && pawn.story.traits.HasTrait(thoughTrait))
+            {
+				bool traitFound = false;
+                foreach (Trait trait in pawn.story.traits.allTraits)
+                {
+					if (trait.def == thoughTrait)
+					{
+						traitFound = true;
+                    }
+                }
+				if (!traitFound)
+				{
+                    toughTraitAdjusted = false;
+                }
+				if (traitFound && !toughTraitAdjusted)
+				{
+                    toughTraitAdjusted = true;
+                    baseToughness += 1;
+                }
+            }
+        }
+        return Math.Max(0, baseToughness);
     }
 
     public override void PostExposeData()
@@ -226,6 +256,7 @@ public class CompToughnessCache : ThingComp
 
         Scribe_Values.Look(ref skillDisabled, "skillDisabled", false);
         Scribe_Values.Look(ref compintitialised, "compintitialised", false);
+		Scribe_Values.Look(ref toughTraitAdjusted, "toughTraitAdjusted", false);
     }
 
 }

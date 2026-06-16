@@ -30,10 +30,10 @@ LoadedModManager.GetMod<ToughnessSkillMod>()?.GetSettings<ThoughnessSkillSetting
             foreach (var pawn in pawns)
             {
                 SkillRecord skill = pawn.skills?.GetSkill(DefDatabase<SkillDef>.GetNamed("Toughness", false));
-                if (skill != null && skill.Level <= 0 && !skill.TotallyDisabled)
+                if (skill != null && skill.levelInt <= 0 && !skill.TotallyDisabled)
                 {
-                    int baseToughness = Rand.RangeInclusive(2, 6);
-                    skill.Level = Patch_AdjustStartingToughness.AdjustToughnessByBackstory(pawn, baseToughness);
+                    int baseToughness = Rand.RangeInclusive(1, 6);
+                    skill.levelInt = Patch_AdjustStartingToughness.AdjustToughnessByBackstory(pawn, baseToughness);
                     skill.xpSinceLastLevel = 0f;
 
                     CompToughnessCache comp = pawn.TryGetComp<CompToughnessCache>();
@@ -41,7 +41,7 @@ LoadedModManager.GetMod<ToughnessSkillMod>()?.GetSettings<ThoughnessSkillSetting
 
                     if (Prefs.DevMode && Settings.debugMode)
                     {
-                        Log.Message($"[Toughness] Init {pawn.LabelShortCap} → Toughness {baseToughness}");
+                        Log.Message($"[Toughness] Init {pawn.LabelShortCap} → Toughness {skill.levelInt}");
                     }
                 }
             }

@@ -1,52 +1,50 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<AssemblyName>ToughnessSkillMod</AssemblyName>
-		<GenerateAssemblyInfo>False</GenerateAssemblyInfo>
-		<TargetFramework>net472</TargetFramework>
-	</PropertyGroup>
-	<PropertyGroup>
-		<LangVersion>12.0</LangVersion>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-	</PropertyGroup>
-	<PropertyGroup>
-		<BaseOutputPath></BaseOutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-	</PropertyGroup>
-	<PropertyGroup>
-		<!-- Prevent duplicate TargetFrameworkAttribute generation -->
-		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-	</PropertyGroup>
-	<ItemGroup>
-		<Reference Include="0Harmony">
-		  <HintPath>D:\SteamLibrary\steamapps\workshop\content\294100\2009463077\Current\Assemblies\0Harmony.dll</HintPath>
-		</Reference>
-		<Reference Include="Assembly-CSharp">
-		  <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
-		</Reference>
-		<Reference Include="CharacterEditor">
-		  <HintPath>D:\SteamLibrary\steamapps\workshop\content\294100\1874644848\v1.6\Assemblies\CharacterEditor.dll</HintPath>
-		</Reference>
-		<Reference Include="System.Core" />
-		<Reference Include="UnityEngine.CoreModule">
-		  <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-		</Reference>
-		<Reference Include="UnityEngine.IMGUIModule">
-		  <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
-		</Reference>
-		<Reference Include="UnityEngine.TextRenderingModule">
-		  <HintPath>D:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
-		</Reference>
-	</ItemGroup>
+  <PropertyGroup>
+    <AssemblyName>ToughnessSkillMod</AssemblyName>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LangVersion>12.0</LangVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>E:\SteamLibrary\steamapps\workshop\content\294100\2009463077\Current\Assemblies\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="CharacterEditor">
+      <HintPath>E:\SteamLibrary\steamapps\workshop\content\294100\1874644848\v1.6\Assemblies\CharacterEditor.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="VSE">
+      <HintPath>E:\SteamLibrary\steamapps\workshop\content\294100\3400246558\1.6\Assemblies\VSE.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
-	<!-- Path to copy the final DLL to -->
-	<PropertyGroup>
-		<RimWorldModsAssemblies>D:\SteamLibrary\steamapps\common\RimWorld\Mods\Thoughness Skill\Assemblies\</RimWorldModsAssemblies>
-	</PropertyGroup>
+  <!-- Path to copy the final DLL to -->
+  <PropertyGroup>
+    <RimWorldModsAssemblies>E:\SteamLibrary\steamapps\common\RimWorld\Mods\Thoughness Skill\Assemblies\</RimWorldModsAssemblies>
+  </PropertyGroup>
 
-	<!-- Copy the built DLL to the RimWorld Mods Assemblies folder after build -->
-	<Target Name="CopyToRimWorldAssemblies" AfterTargets="Build">
-		<Message Text="Copying $(TargetPath) to $(RimWorldModsAssemblies)" Importance="High" />
-		<MakeDir Directories="$(RimWorldModsAssemblies)" Condition="!Exists('$(RimWorldModsAssemblies)')" />
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(RimWorldModsAssemblies)" SkipUnchangedFiles="true" />
-	</Target>
+  <!-- Copy the built DLL to the RimWorld Mods Assemblies folder after build -->
+  <Target Name="CopyToRimWorldAssemblies" AfterTargets="Build">
+    <Message Text="Copying $(TargetPath) to $(RimWorldModsAssemblies)" Importance="High" />
+    <MakeDir Directories="$(RimWorldModsAssemblies)" Condition="!Exists('$(RimWorldModsAssemblies)')" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(RimWorldModsAssemblies)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

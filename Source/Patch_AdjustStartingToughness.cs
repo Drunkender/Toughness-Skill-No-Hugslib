@@ -32,11 +32,13 @@ public static class Patch_AdjustStartingToughness
 		{
 			return;
 		}
-		SkillRecord skill = pawn.skills.GetSkill(DefDatabase<SkillDef>.GetNamed("Toughness", errorOnFail: false));
+
+        SkillRecord skill = pawn.skills.GetSkill(DefDatabase<SkillDef>.GetNamed("Toughness", errorOnFail: false));
 		if (skill != null)
 		{
 			int baseToughness = Rand.RangeInclusive(1, 6);
-			baseToughness = (skill.Level = AdjustToughnessByBackstory(pawn, baseToughness));
+            baseToughness = AdjustToughnessByBackstory(pawn, baseToughness);
+			skill.levelInt = baseToughness;
 			skill.xpSinceLastLevel = 0f;
 
             CompToughnessCache comp = pawn.TryGetComp<CompToughnessCache>();
@@ -46,7 +48,7 @@ public static class Patch_AdjustStartingToughness
 
             if (Prefs.DevMode && (bool)Settings.debugMode)
             {
-                Log.Message($"[Toughness] {pawn.Name} generated with Toughness {baseToughness}.");
+                Log.Message($"[Toughness] {pawn.Name} generated with Toughness {skill.levelInt}.");
             }
         }
 	}

@@ -204,7 +204,7 @@ public class ToughnessSkillMod : Mod
         return currentValue;
     }
 
-    private static void RefreshCaches()
+    public static void RefreshCaches()
     {
         foreach (Pawn pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive.Where(p => p != null && p.RaceProps?.Humanlike == true))
         {

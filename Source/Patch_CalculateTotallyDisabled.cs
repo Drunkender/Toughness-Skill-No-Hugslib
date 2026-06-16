@@ -14,6 +14,12 @@ namespace ToughnessSkillMod
 
         public static void Postfix(SkillRecord __instance, ref bool __result)
         {
+            if (Current.ProgramState != ProgramState.Playing)
+            {
+                __result = false;
+                return;
+            }
+
             Pawn pawn = __instance.Pawn;
             if (__instance.def == DefDatabase<SkillDef>.GetNamed("Toughness", errorOnFail: false))
             {
