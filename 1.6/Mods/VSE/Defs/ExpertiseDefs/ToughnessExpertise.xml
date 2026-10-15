@@ -1,0 +1,35 @@
+<Defs>
+
+  <!-- Juggernaut: Pure damage reduction. Stacks additively with the Toughness skill's
+       StatPart_ToughnessDamage via stat offset on IncomingDamageFactor.
+       At expertise level 6 with default VSE StatMultiplier (1.0): -0.30 additional
+       damage factor. Combined with Toughness level 20 (~0.50), total ~0.20. -->
+  <VSE.Expertise.ExpertiseDef>
+    <defName>Juggernaut</defName>
+    <label>Juggernaut</label>
+    <description>An expertise in shrugging off incoming damage, thickening skin
+      and hardening muscle to withstand punishing blows.</description>
+    <skill>Toughness</skill>
+    <statOffsets>
+      <IncomingDamageFactor>-0.05</IncomingDamageFactor>
+    </statOffsets>
+  </VSE.Expertise.ExpertiseDef>
+
+  <!-- Scar Tissue: Bleed reduction + pain tolerance. FinalBleedRate is the mod's
+       custom stat (base 1.0, lower is better). PainShockThreshold is vanilla
+       (base 0.50, higher is better — pawn tolerates more pain before downing).
+       At expertise level 6: -0.30 bleed factor, +0.12 pain shock threshold. -->
+  <VSE.Expertise.ExpertiseDef>
+    <defName>ScarTissue</defName>
+    <label>Scar Tissue</label>
+    <description>An expertise in rapid blood clotting and pain management,
+      reducing bleed rates and raising pain tolerance through accumulated
+      scar tissue.</description>
+    <skill>Toughness</skill>
+    <statOffsets>
+      <FinalBleedRate>-0.05</FinalBleedRate>
+      <PainShockThreshold>0.02</PainShockThreshold>
+    </statOffsets>
+  </VSE.Expertise.ExpertiseDef>
+
+</Defs>

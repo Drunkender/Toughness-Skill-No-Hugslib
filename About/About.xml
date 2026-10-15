@@ -20,5 +20,6 @@
 	<loadAfter>
 		<li>brrainz.harmony</li>
 		<li>vanillaexpanded.vanillasocialinteractionsexpanded</li>
+		<li>vanillaexpanded.skills</li>
 	</loadAfter>
 </ModMetaData>
