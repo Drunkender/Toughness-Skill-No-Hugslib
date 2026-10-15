@@ -1,6 +1,7 @@
 .git
 .vs
 Assemblies/Release
+Assemblies/*.pdb
 Source/obj
 Source/bin
 Source/ToughnessSkillMod/obj

@@ -4,11 +4,11 @@
        uses each top-level element's NAME as the version key, so bare top-level
        <li> registered the compat folders under a bogus "li" version and they
        never loaded (this is why VSIE_Teaching_Toughness was missing).
-       Once a <v1.6> group exists it replaces default resolution entirely, so
+       Once a <v1.7> group exists it replaces default resolution entirely, so
        "/" must be listed or the root Defs/Assemblies/Patches stop loading. -->
-  <v1.6>
+  <v1.7>
     <li>/</li>
-    <li IfModActive="vanillaexpanded.vanillasocialinteractionsexpanded">1.6/Mods/VSIE</li>
-    <li IfModActive="vanillaexpanded.skills">1.6/Mods/VSE</li>
-  </v1.6>
+    <li IfModActive="vanillaexpanded.vanillasocialinteractionsexpanded">1.7/Mods/VSIE</li>
+    <li IfModActive="vanillaexpanded.skills">1.7/Mods/VSE</li>
+  </v1.7>
 </loadFolders>

@@ -1,50 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>ToughnessSkillMod</AssemblyName>
-    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
-    <TargetFramework>net472</TargetFramework>
-  </PropertyGroup>
-  <PropertyGroup>
-    <LangVersion>12.0</LangVersion>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup>
+    <!-- RimWorld 1.7 runs on Waylith (a CoreCLR fork): net10 + C# 14. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- AssemblyInfo.cs carries the attributes; don't let the SDK duplicate them. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- RimWorld ignores .deps.json; don't emit it into Assemblies/. -->
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <!-- Build output lands directly in the mod's Assemblies/ folder. -->
+    <OutputPath>..\Assemblies\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- The "public" surface of a mod assembly is consumed only by the RimWorld
+         runtime (XML Class= refs, Harmony, def/comp/GameComponent reflection) —
+         it is not a real API boundary, so API-contract rules are suppressed:
+         CA1707: Patch_* and vanilla-mirroring names use underscores intentionally.
+         CA1515: RimWorld requires public types for reflection instantiation.
+         CA1051: public fields are the mod convention; Scribe_Values.Look(ref ...)
+                and direct settings access both need them.
+         CA1062: engine-supplied parameters (Harmony __instance/__result, stat
+                requests) are never null; validating them is noise.
+         CA1724: type/namespace names are load-bearing — XML Class= attributes and
+                the Harmony id reference them verbatim. -->
+    <NoWarn>CA1707;CA1515;CA1051;CA1062;CA1724</NoWarn>
+    <!-- Path depth: Source -> <ModDir> -> Mods -> RimWorld game root. -->
+    <RimWorldDir>$(MSBuildThisFileDirectory)..\..\..\</RimWorldDir>
+    <!-- Harmony 3 ships inside the Harmony mod's own 1.7 load folder; never bundle it. -->
+    <HarmonyDir>$(RimWorldDir)..\..\workshop\content\294100\2009463077\1.7\Assemblies\</HarmonyDir>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>E:\SteamLibrary\steamapps\workshop\content\294100\2009463077\Current\Assemblies\0Harmony.dll</HintPath>
-    </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(RimWorldDir)Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="CharacterEditor">
-      <HintPath>E:\SteamLibrary\steamapps\workshop\content\294100\1874644848\v1.6\Assemblies\CharacterEditor.dll</HintPath>
+    <!-- UnityStubs exports the whole UnityEngine namespace; Rect/Vector2/Mathf and
+         the IMGUI surface all resolve through it. -->
+    <Reference Include="UnityStubs">
+      <HintPath>$(RimWorldDir)UnityStubs.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="System.Core" />
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
-    </Reference>
-    <Reference Include="VSE">
-      <HintPath>E:\SteamLibrary\steamapps\workshop\content\294100\3400246558\1.6\Assemblies\VSE.dll</HintPath>
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyDir)0Harmony.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
-
-  <!-- Path to copy the final DLL to -->
-  <PropertyGroup>
-    <RimWorldModsAssemblies>E:\SteamLibrary\steamapps\common\RimWorld\Mods\Thoughness Skill\Assemblies\</RimWorldModsAssemblies>
-  </PropertyGroup>
-
-  <!-- Copy the built DLL to the RimWorld Mods Assemblies folder after build -->
-  <Target Name="CopyToRimWorldAssemblies" AfterTargets="Build">
-    <Message Text="Copying $(TargetPath) to $(RimWorldModsAssemblies)" Importance="High" />
-    <MakeDir Directories="$(RimWorldModsAssemblies)" Condition="!Exists('$(RimWorldModsAssemblies)')" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(RimWorldModsAssemblies)" SkipUnchangedFiles="true" />
-  </Target>
 </Project>

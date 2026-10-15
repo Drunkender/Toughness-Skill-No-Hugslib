@@ -7,23 +7,37 @@ using Verse;
 
 namespace ToughnessSkillMod;
 
+/// <summary>
+/// Mod entry point: applies all Harmony patches, owns the settings lifecycle, and exposes
+/// the faction-classification helpers (<see cref="IsColonist"/> etc.) used by every patch
+/// to gate Toughness per pawn category.
+/// </summary>
 public class ToughnessSkillMod : Mod
 {
-    public static ThoughnessSkillSettings settings;
-    private static ThoughnessSkillSettings defaultSettings;
+    /// <summary>
+    /// Loaded settings instance. Initialised to a default instance (not null) so early
+    /// callers during boot never observe a null — <see cref="Mod.GetSettings{T}"/>
+    /// replaces it with the user's saved values immediately after. Internal rather than
+    /// public: the mutable-static pattern is this assembly's convention only (CA2211).
+    /// </summary>
+    internal static ThoughnessSkillSettings settings = new ThoughnessSkillSettings();
+    private static ThoughnessSkillSettings defaultSettings = new ThoughnessSkillSettings();
 
     private string baseXpBuffer = "";
     private string breakpointBuffer = "";
     private string slopeEarlyBuffer = "";
     private string maxReductionBuffer = "";
 
+    /// <summary>Mod constructor: applies Harmony patches and loads settings.</summary>
+    /// <param name="content">This mod's content pack.</param>
     public ToughnessSkillMod(ModContentPack content) : base(content)
     {
         var harmony = new Harmony("tyinplop.ToughnessSkillMod");
         harmony.PatchAll();
         settings = GetSettings<ThoughnessSkillSettings>();
-        defaultSettings = new ThoughnessSkillSettings();
 
+        // Seed the text-field buffers from loaded settings on first open — they're
+        // instance state (the settings window is a fresh Mod each session otherwise).
         if (string.IsNullOrEmpty(baseXpBuffer))
         {
             baseXpBuffer = settings.baseXp.ToString(CultureInfo.InvariantCulture);
@@ -42,11 +56,14 @@ public class ToughnessSkillMod : Mod
         }
     }
 
+    /// <summary>Display name in the mod settings list.</summary>
     public override string SettingsCategory()
     {
         return "Thoughness Skill";
     }
 
+    /// <summary>Draws the settings window: XP tuning, faction toggles, reset button.</summary>
+    /// <param name="inRect">Content area provided by the settings dialog.</param>
     public override void DoSettingsWindowContents(Rect inRect)
     {
         Listing_Standard listingStandard = new Listing_Standard();
@@ -164,6 +181,10 @@ public class ToughnessSkillMod : Mod
         base.DoSettingsWindowContents(inRect);
     }
 
+    /// <summary>
+    /// Parses the text buffers into settings on close, then triggers a cache refresh so
+    /// curve/toggle edits apply without a reload.
+    /// </summary>
     public override void WriteSettings()
     {
         settings.baseXp = ParseOrDefault(baseXpBuffer, defaultSettings.baseXp, settings.baseXp, out baseXpBuffer);
@@ -172,10 +193,21 @@ public class ToughnessSkillMod : Mod
         settings.maxReduction = ParseOrDefault(maxReductionBuffer, defaultSettings.maxReduction, settings.maxReduction, out maxReductionBuffer);
 
         base.WriteSettings();
+        // Deferred until the settings save finishes mutating state — refreshing caches
+        // mid-write can read half-updated values.
         LongEventHandler.ExecuteWhenFinished(RefreshCaches);
     }
 
-    private float ParseOrDefault(string buffer, float defaultValue, float currentValue, out string newBuffer)
+    /// <summary>
+    /// Parses a settings buffer to float, falling back to <paramref name="defaultValue"/>
+    /// on empty input and <paramref name="currentValue"/> on unparseable input.
+    /// </summary>
+    /// <param name="buffer">Raw text the user typed.</param>
+    /// <param name="defaultValue">Value used when the buffer is blank.</param>
+    /// <param name="currentValue">Last known-good value, used when parsing fails.</param>
+    /// <param name="newBuffer">Normalised buffer text to write back to the field.</param>
+    /// <returns>The parsed or fallback value.</returns>
+    private static float ParseOrDefault(string buffer, float defaultValue, float currentValue, out string newBuffer)
     {
         bool printDebugMessage = Prefs.DevMode && settings.debugMode;
         if (string.IsNullOrWhiteSpace(buffer))
@@ -204,6 +236,10 @@ public class ToughnessSkillMod : Mod
         return currentValue;
     }
 
+    /// <summary>
+    /// Forces every living humanlike pawn's <see cref="CompToughnessCache"/> to re-evaluate
+    /// level and disable state. Called after settings writes and once at game start.
+    /// </summary>
     public static void RefreshCaches()
     {
         foreach (Pawn pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive.Where(p => p != null && p.RaceProps?.Humanlike == true))
@@ -212,19 +248,25 @@ public class ToughnessSkillMod : Mod
         }
     }
 
+    /// <summary>True for player-faction pawns.</summary>
     public static bool IsColonist(Pawn pawn)
     {
         return pawn.Faction != null && pawn.Faction.IsPlayer;
     }
 
+    /// <summary>True for non-player pawns whose faction isn't hostile to the player.</summary>
     public static bool IsFriendlyPawn(Pawn pawn)
     {
         return pawn.Faction != null && !pawn.Faction.HostileTo(Faction.OfPlayer) && !pawn.Faction.IsPlayer;
     }
+
+    /// <summary>True for non-player pawns whose faction is hostile to the player.</summary>
     public static bool IsHostilePawn(Pawn pawn)
     {
         return pawn.Faction != null && pawn.Faction.HostileTo(Faction.OfPlayer) && !pawn.Faction.IsPlayer;
     }
+
+    /// <summary>True for factionless pawns; gated by the friendly-pawns toggle (wild spawns share that class).</summary>
     public static bool IsIndependentPawn(Pawn pawn)
     {
         return pawn.Faction == null;
