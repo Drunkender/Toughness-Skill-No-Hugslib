@@ -34,8 +34,19 @@ public class CompToughnessCache : ThingComp
     /// <summary>True once <see cref="InitialiseComp"/> has run; gates the disabled-verdict patch.</summary>
     public bool compintitialised;
 
-	/// <summary>True once the +1 Tough trait bonus has been folded into the cached level.</summary>
-	public bool toughTraitAdjusted;
+	/// <summary>
+	/// Legacy one-shot flag from the single-trait build (<c>Tough</c> → +1). Still scribed
+	/// under its original key so old saves fold that already-applied +1 into
+	/// <see cref="traitLevelsApplied"/> instead of double-counting or losing it.
+	/// </summary>
+	private bool legacyToughTraitApplied;
+
+	/// <summary>
+	/// Net trait-derived level delta already folded into <see cref="SkillRecord.levelInt"/>.
+	/// Compared against the live trait set on every <see cref="UpdateCache"/> call so trait
+	/// additions/removals (dev tools, other mods) re-balance instead of being missed.
+	/// </summary>
+	private int traitLevelsApplied;
 
     private static ThoughnessSkillSettings Settings =>
         LoadedModManager.GetMod<ToughnessSkillMod>()?.GetSettings<ThoughnessSkillSettings>() ?? ToughnessSkillMod.settings;
@@ -292,43 +303,65 @@ public class CompToughnessCache : ThingComp
     }
 
     /// <summary>
-    /// Grants a one-time +1 level for the vanilla <c>Tough</c> trait, tracked by
-    /// <see cref="toughTraitAdjusted"/> so it doesn't stack on repeat calls.
+    /// Folds trait-derived level deltas into the pawn's Toughness level.
     /// </summary>
+    /// <remarks>
+    /// Recomputes the desired delta from the pawn's live trait set on every call and
+    /// applies only the difference vs <see cref="traitLevelsApplied"/>, making it
+    /// idempotent on stat-read paths and self-correcting when traits change post-spawn.
+    /// Only the amount that actually moved the level is recorded (the result is clamped
+    /// to 0–20), so removing a trait whose delta was partially clamped restores exactly
+    /// the pre-clamp level.
+    /// </remarks>
     /// <param name="pawn">Pawn whose traits are inspected.</param>
     /// <param name="baseToughness">Current level to adjust.</param>
-    /// <returns>Level including the trait bonus, clamped to ≥0.</returns>
+    /// <returns>Level including the outstanding trait delta, clamped to 0–20.</returns>
     public int AdjustToughnessByTrait(Pawn pawn, int baseToughness)
     {
-        if (pawn.story != null && pawn.story.traits != null)
+        if (pawn.story?.traits == null)
         {
-            TraitDef thoughTrait = TraitDef.Named("Tough");
-            if (thoughTrait != null && pawn.story.traits.HasTrait(thoughTrait))
-            {
-				bool traitFound = false;
-                foreach (Trait trait in pawn.story.traits.allTraits)
-                {
-					if (trait.def == thoughTrait)
-					{
-						traitFound = true;
-                    }
-                }
-                // Trait was removed (rare — dev tools, other mods): re-arm the one-shot.
-				if (!traitFound)
-				{
-                    toughTraitAdjusted = false;
-                }
-				if (traitFound && !toughTraitAdjusted)
-				{
-                    toughTraitAdjusted = true;
-                    baseToughness += 1;
-                }
-            }
+            return Math.Max(0, baseToughness);
         }
-        return Math.Max(0, baseToughness);
+
+        int desiredDelta = 0;
+        foreach (Trait trait in pawn.story.traits.allTraits)
+        {
+            desiredDelta += TraitLevelDelta(trait);
+        }
+
+        // Pre-multi-trait saves scribed only a bool for the old +1 Tough bonus —
+        // count it as already applied so those pawns gain just the remaining +1.
+        int appliedDelta = traitLevelsApplied + (legacyToughTraitApplied ? 1 : 0);
+        int target = Math.Clamp(baseToughness + desiredDelta - appliedDelta, 0, 20);
+        traitLevelsApplied += target - baseToughness;
+        return target;
     }
 
-    /// <summary>Persists the cache fields and one-shot flags through save/load.</summary>
+    /// <summary>
+    /// Toughness level delta for a single trait, matched by defName so Biotech/Anomaly
+    /// traits resolve without hard DLC references — absent DLCs simply never produce them.
+    /// </summary>
+    /// <param name="trait">The trait instance; <see cref="Trait.Degree"/> matters for spectrum traits.</param>
+    /// <returns>Signed level delta; 0 for traits with no bearing on bodily durability.</returns>
+    private static int TraitLevelDelta(Trait trait)
+    {
+        switch (trait.def.defName)
+        {
+            case "Tough": return 2;        // Thick skin, dense flesh — vanilla's own durability axis.
+            case "Delicate": return -2;    // Biotech: fragile skin and bones; Tough's exclusion-tag opposite.
+            case "Wimp": return -2;        // Cowardly; a little pain immobilizes them.
+            case "Masochist": return 2;    // Enjoys being hurt — built tolerance. Vanilla opposite of Wimp.
+            case "Brawler": return 2;      // Fights up close, eats hits constantly.
+            case "Bloodlust": return 1;    // Violent life, inured to blood and injury.
+            case "Ascetic": return 1;      // Forsakes physical comfort — hardship-hardened.
+            case "BodyMastery": return 3;  // Anomaly dev trait (commonality 0): body runs on unknown mechanism.
+            // Immunity is a spectrum: super-immune (degree 1) vs sickly (degree -1).
+            case "Immunity": return trait.Degree > 0 ? 1 : -2;
+            default: return 0;
+        }
+    }
+
+    /// <summary>Persists the cache fields and trait-application state through save/load.</summary>
     public override void PostExposeData()
     {
 		base.PostExposeData();
@@ -339,7 +372,8 @@ public class CompToughnessCache : ThingComp
 
         Scribe_Values.Look(ref skillDisabled, "skillDisabled", false);
         Scribe_Values.Look(ref compintitialised, "compintitialised", false);
-		Scribe_Values.Look(ref toughTraitAdjusted, "toughTraitAdjusted", false);
+		Scribe_Values.Look(ref legacyToughTraitApplied, "toughTraitAdjusted", false);
+		Scribe_Values.Look(ref traitLevelsApplied, "traitLevelsApplied", 0);
     }
 
 }
