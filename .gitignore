@@ -4,3 +4,12 @@ Assemblies/Release
 Source/obj
 Source/bin
 Source/ToughnessSkillMod/obj
+
+# Decompiler output — regenerated locally by the rimworld-mod-decompile skill,
+# not part of the shipped mod. index.json covers both the per-mod index under
+# Decompiled/ and any source index emitted directly into Source/.
+Source/Decompiled/
+Source/index.json
+
+# DDS textures are build artifacts generated from PNG sources.
+*.dds
